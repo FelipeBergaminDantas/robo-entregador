@@ -63,9 +63,10 @@ export const RouteList = ({
                       style={{
                         backgroundColor: isSelected ? `hsl(${routeColor})` : undefined,
                         borderColor: `hsl(${routeColor})`,
+                        color: isSelected ? 'hsl(var(--background))' : undefined,
                       }}
                     >
-                      {route.distance} km
+                      {route.distance} km • {route.time} min
                     </Badge>
                   </div>
                   <div className="text-xs font-mono opacity-90">

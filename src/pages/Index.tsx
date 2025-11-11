@@ -7,22 +7,31 @@ import { RouteList } from "@/components/RouteList";
 import { AnimationControls } from "@/components/AnimationControls";
 import { Card } from "@/components/ui/card";
 
-// Generate distinct colors for routes
-const generateRouteColors = (count: number): string[] => {
-  const colors = [
-    "220 90% 56%",  // Blue
-    "142 76% 36%",  // Green
-    "346 77% 50%",  // Red
-    "262 83% 58%",  // Purple
-    "24 95% 53%",   // Orange
-    "173 80% 40%",  // Teal
-    "280 60% 50%",  // Violet
-    "45 93% 47%",   // Yellow-Orange
-    "338 70% 55%",  // Pink
-    "195 70% 45%",  // Cyan
-  ];
+// Generate heatmap colors based on time (green -> yellow -> red)
+const generateHeatmapColor = (time: number, minTime: number, maxTime: number): string => {
+  // Normalize time to 0-1 range
+  const normalized = (time - minTime) / (maxTime - minTime);
   
-  return colors.slice(0, count);
+  // Green (120, 100%, 35%) -> Yellow (50, 100%, 50%) -> Red (0, 100%, 50%)
+  let hue: number;
+  let saturation: number;
+  let lightness: number;
+  
+  if (normalized < 0.5) {
+    // Green to Yellow
+    const t = normalized * 2;
+    hue = 120 - (70 * t); // 120 to 50
+    saturation = 76 + (24 * t); // 76% to 100%
+    lightness = 36 + (14 * t); // 36% to 50%
+  } else {
+    // Yellow to Red
+    const t = (normalized - 0.5) * 2;
+    hue = 50 - (50 * t); // 50 to 0
+    saturation = 100;
+    lightness = 50 + (10 * t); // 50% to 60%
+  }
+  
+  return `${Math.round(hue)} ${Math.round(saturation)}% ${Math.round(lightness)}%`;
 };
 
 const Index = () => {
@@ -31,9 +40,6 @@ const Index = () => {
   const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
-  const [animationDuration, setAnimationDuration] = useState(
-    ANIMATION_CONFIG.defaultDuration
-  );
   const [startTime, setStartTime] = useState<number | null>(null);
   const [pausedTime, setPausedTime] = useState(0);
   const [routeColors, setRouteColors] = useState<string[]>([]);
@@ -43,7 +49,18 @@ const Index = () => {
     const pathfinder = new PathFinder(graphData.edges);
     const allRoutes = pathfinder.findAllPaths("A", "G");
     setRoutes(allRoutes);
-    setRouteColors(generateRouteColors(allRoutes.length));
+    
+    // Calculate heatmap colors based on time
+    if (allRoutes.length > 0) {
+      const times = allRoutes.map(r => r.time);
+      const minTime = Math.min(...times);
+      const maxTime = Math.max(...times);
+      
+      const colors = allRoutes.map(route => 
+        generateHeatmapColor(route.time, minTime, maxTime)
+      );
+      setRouteColors(colors);
+    }
     
     // Auto-select first route
     if (allRoutes.length > 0) {
@@ -54,9 +71,10 @@ const Index = () => {
 
   // Animation loop
   useEffect(() => {
-    if (!isAnimating || !startTime) return;
+    if (!isAnimating || !startTime || !selectedRoute) return;
 
     let animationFrameId: number;
+    const animationDuration = selectedRoute.time; // Use route time in minutes
 
     const animate = (currentTime: number) => {
       const elapsed = (currentTime - startTime) / 1000 + pausedTime;
@@ -80,7 +98,7 @@ const Index = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isAnimating, startTime, animationDuration, pausedTime]);
+  }, [isAnimating, startTime, pausedTime, selectedRoute]);
 
   const handlePlay = useCallback(() => {
     if (!selectedRoute) return;
@@ -107,13 +125,6 @@ const Index = () => {
     setSelectedRouteIndex(index);
     handleReset();
   }, [handleReset]);
-
-  const handleDurationChange = useCallback((value: number) => {
-    setAnimationDuration(value);
-    if (isAnimating) {
-      handleReset();
-    }
-  }, [isAnimating, handleReset]);
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -149,9 +160,10 @@ const Index = () => {
                 onPlay={handlePlay}
                 onPause={handlePause}
                 onReset={handleReset}
-                duration={animationDuration}
-                onDurationChange={handleDurationChange}
+                duration={selectedRoute?.time || 0}
+                onDurationChange={() => {}} // No longer needed
                 disabled={!selectedRoute}
+                hideDurationControl={true}
               />
 
               {/* Current Route Info */}
@@ -166,13 +178,24 @@ const Index = () => {
                         {selectedRoute.path.join(" → ")}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Distância Total
-                      </p>
-                      <p className="text-2xl font-bold text-accent">
-                        {selectedRoute.distance} km
-                      </p>
+                    <div className="flex gap-6">
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground mb-1">
+                          Distância Total
+                        </p>
+                        <p className="text-2xl font-bold text-accent">
+                          {selectedRoute.distance} km
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground mb-1">
+                          Tempo Estimado
+                        </p>
+                        <p className="text-2xl font-bold"
+                           style={{ color: `hsl(${selectedRouteIndex !== null ? routeColors[selectedRouteIndex] : '142 76% 36%'})` }}>
+                          {selectedRoute.time} min
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -192,10 +215,23 @@ const Index = () => {
         </div>
 
         {/* Footer Info */}
-        <div className="text-center text-sm text-muted-foreground">
-          <p>
-            Desenvolvido com D3.js • {routes.length} rotas possíveis • Algoritmo
-            DFS
+        <div className="text-center space-y-3">
+          <div className="flex items-center justify-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(120 76% 36%)' }}></div>
+              <span className="text-muted-foreground">Rápido</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(50 100% 50%)' }}></div>
+              <span className="text-muted-foreground">Médio</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(0 100% 60%)' }}></div>
+              <span className="text-muted-foreground">Lento</span>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Desenvolvido com D3.js • {routes.length} rotas possíveis • Algoritmo DFS • Velocidade média: 60 km/h
           </p>
         </div>
       </div>

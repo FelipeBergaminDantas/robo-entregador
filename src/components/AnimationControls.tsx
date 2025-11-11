@@ -16,6 +16,7 @@ interface AnimationControlsProps {
   duration: number;
   onDurationChange: (value: number) => void;
   disabled: boolean;
+  hideDurationControl?: boolean;
 }
 
 export const AnimationControls = ({
@@ -26,6 +27,7 @@ export const AnimationControls = ({
   duration,
   onDurationChange,
   disabled,
+  hideDurationControl = false,
 }: AnimationControlsProps) => {
   return (
     <div className="flex items-center gap-3 p-4 bg-card/50 rounded-lg border border-border">
@@ -62,39 +64,43 @@ export const AnimationControls = ({
         </Button>
       </div>
 
-      <div className="h-8 w-px bg-border" />
+      {!hideDurationControl && (
+        <>
+          <div className="h-8 w-px bg-border" />
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="lg">
-            <Settings className="w-5 h-5 mr-2" />
-            Duração: {duration}s
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Duração da Animação</Label>
-              <div className="flex items-center gap-4">
-                <Slider
-                  value={[duration]}
-                  onValueChange={(value) => onDurationChange(value[0])}
-                  min={3}
-                  max={30}
-                  step={1}
-                  className="flex-1"
-                />
-                <span className="text-sm font-medium w-12 text-right">
-                  {duration}s
-                </span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="lg">
+                <Settings className="w-5 h-5 mr-2" />
+                Duração: {duration}s
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Duração da Animação</Label>
+                  <div className="flex items-center gap-4">
+                    <Slider
+                      value={[duration]}
+                      onValueChange={(value) => onDurationChange(value[0])}
+                      min={3}
+                      max={30}
+                      step={1}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-medium w-12 text-right">
+                      {duration}s
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Controla a velocidade do percurso do carrinho
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Controla a velocidade do percurso do carrinho
-              </p>
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+            </PopoverContent>
+          </Popover>
+        </>
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { Edge, Route } from "@/types/graph";
 
 export class PathFinder {
   private adjacencyList: Map<string, Array<{ node: string; weight: number }>>;
+  private readonly AVERAGE_SPEED_KMH = 60; // velocidade média em km/h
 
   constructor(edges: Edge[]) {
     this.adjacencyList = new Map();
@@ -34,9 +35,11 @@ export class PathFinder {
     
     const dfs = (current: string, path: string[], distance: number) => {
       if (current === end) {
+        const timeInMinutes = (distance / this.AVERAGE_SPEED_KMH) * 60;
         routes.push({
           path: [...path, current],
-          distance
+          distance,
+          time: Math.round(timeInMinutes)
         });
         return;
       }

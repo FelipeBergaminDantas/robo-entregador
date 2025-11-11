@@ -13,6 +13,7 @@ export interface Edge {
 export interface Route {
   path: string[];
   distance: number;
+  time: number; // tempo em minutos
 }
 
 export interface GraphData {
