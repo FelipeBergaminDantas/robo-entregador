@@ -47,6 +47,16 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        graph: {
+          node: "hsl(var(--graph-node))",
+          "node-inactive": "hsl(var(--graph-node-inactive))",
+          edge: "hsl(var(--graph-edge))",
+          "edge-inactive": "hsl(var(--graph-edge-inactive))",
+        },
+        route: {
+          active: "hsl(var(--route-active))",
+          highlight: "hsl(var(--route-highlight))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
