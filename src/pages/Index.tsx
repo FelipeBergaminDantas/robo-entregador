@@ -7,9 +7,28 @@ import { RouteList } from "@/components/RouteList";
 import { AnimationControls } from "@/components/AnimationControls";
 import { Card } from "@/components/ui/card";
 
+// Generate distinct colors for routes
+const generateRouteColors = (count: number): string[] => {
+  const colors = [
+    "220 90% 56%",  // Blue
+    "142 76% 36%",  // Green
+    "346 77% 50%",  // Red
+    "262 83% 58%",  // Purple
+    "24 95% 53%",   // Orange
+    "173 80% 40%",  // Teal
+    "280 60% 50%",  // Violet
+    "45 93% 47%",   // Yellow-Orange
+    "338 70% 55%",  // Pink
+    "195 70% 45%",  // Cyan
+  ];
+  
+  return colors.slice(0, count);
+};
+
 const Index = () => {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
   const [animationDuration, setAnimationDuration] = useState(
@@ -17,16 +36,19 @@ const Index = () => {
   );
   const [startTime, setStartTime] = useState<number | null>(null);
   const [pausedTime, setPausedTime] = useState(0);
+  const [routeColors, setRouteColors] = useState<string[]>([]);
 
   // Calculate all routes on mount
   useEffect(() => {
     const pathfinder = new PathFinder(graphData.edges);
     const allRoutes = pathfinder.findAllPaths("A", "G");
     setRoutes(allRoutes);
+    setRouteColors(generateRouteColors(allRoutes.length));
     
     // Auto-select first route
     if (allRoutes.length > 0) {
       setSelectedRoute(allRoutes[0]);
+      setSelectedRouteIndex(0);
     }
   }, []);
 
@@ -80,8 +102,9 @@ const Index = () => {
     setPausedTime(0);
   }, []);
 
-  const handleSelectRoute = useCallback((route: Route) => {
+  const handleSelectRoute = useCallback((route: Route, index: number) => {
     setSelectedRoute(route);
+    setSelectedRouteIndex(index);
     handleReset();
   }, [handleReset]);
 
@@ -111,12 +134,13 @@ const Index = () => {
           <Card className="lg:col-span-2 p-6">
             <div className="space-y-4">
               <div className="h-[600px]">
-                <GraphVisualization
-                  data={graphData}
-                  selectedRoute={selectedRoute}
-                  animationProgress={animationProgress}
-                  isAnimating={isAnimating}
-                />
+          <GraphVisualization
+            data={graphData}
+            selectedRoute={selectedRoute}
+            animationProgress={animationProgress}
+            isAnimating={isAnimating}
+            routeColor={selectedRouteIndex !== null ? routeColors[selectedRouteIndex] : undefined}
+          />
               </div>
 
               {/* Animation Controls */}
@@ -162,6 +186,7 @@ const Index = () => {
               routes={routes}
               selectedRoute={selectedRoute}
               onSelectRoute={handleSelectRoute}
+              routeColors={routeColors}
             />
           </Card>
         </div>

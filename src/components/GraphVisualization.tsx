@@ -7,6 +7,7 @@ interface GraphVisualizationProps {
   selectedRoute: Route | null;
   animationProgress: number;
   isAnimating: boolean;
+  routeColor?: string;
 }
 
 export const GraphVisualization = ({
@@ -14,6 +15,7 @@ export const GraphVisualization = ({
   selectedRoute,
   animationProgress,
   isAnimating,
+  routeColor = "142 76% 36%", // Default green
 }: GraphVisualizationProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
@@ -87,7 +89,7 @@ export const GraphVisualization = ({
       .attr("stroke", (d) => {
         const edgeKey = `${d.source}-${d.target}`;
         return activeEdges.has(edgeKey)
-          ? "hsl(var(--route-active))"
+          ? `hsl(${routeColor})`
           : "hsl(var(--graph-edge-inactive))";
       })
       .attr("stroke-width", (d) => {
@@ -141,7 +143,7 @@ export const GraphVisualization = ({
       .attr("r", (d) => (activeNodes.has(d.id) ? 20 : 15))
       .attr("fill", (d) =>
         activeNodes.has(d.id)
-          ? "hsl(var(--route-active))"
+          ? `hsl(${routeColor})`
           : "hsl(var(--graph-node-inactive))"
       )
       .attr("stroke", "hsl(var(--background))")
@@ -191,10 +193,10 @@ export const GraphVisualization = ({
         .attr("cx", carX)
         .attr("cy", carY)
         .attr("r", 12)
-        .attr("fill", "hsl(var(--route-highlight))")
+        .attr("fill", `hsl(${routeColor})`)
         .attr("stroke", "hsl(var(--background))")
         .attr("stroke-width", 3)
-        .style("filter", "drop-shadow(0 0 8px hsl(var(--route-highlight)))");
+        .style("filter", `drop-shadow(0 0 8px hsl(${routeColor}))`);
 
       // Car icon (simple triangle pointing in direction of movement)
       const angle = Math.atan2(

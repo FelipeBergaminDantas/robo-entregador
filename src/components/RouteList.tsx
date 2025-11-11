@@ -6,13 +6,15 @@ import { Badge } from "./ui/badge";
 interface RouteListProps {
   routes: Route[];
   selectedRoute: Route | null;
-  onSelectRoute: (route: Route) => void;
+  onSelectRoute: (route: Route, index: number) => void;
+  routeColors: string[];
 }
 
 export const RouteList = ({
   routes,
   selectedRoute,
   onSelectRoute,
+  routeColors,
 }: RouteListProps) => {
   return (
     <div className="flex flex-col h-full">
@@ -31,6 +33,8 @@ export const RouteList = ({
           {routes.map((route, index) => {
             const isSelected =
               selectedRoute?.path.join("-") === route.path.join("-");
+            
+            const routeColor = routeColors[index] || "142 76% 36%";
 
             return (
               <Button
@@ -38,10 +42,15 @@ export const RouteList = ({
                 variant={isSelected ? "default" : "outline"}
                 className={`w-full justify-start text-left h-auto py-4 px-4 transition-all ${
                   isSelected
-                    ? "bg-accent hover:bg-accent/90 border-accent"
+                    ? "hover:opacity-90"
                     : "hover:bg-secondary"
                 }`}
-                onClick={() => onSelectRoute(route)}
+                style={{
+                  borderLeft: `4px solid hsl(${routeColor})`,
+                  backgroundColor: isSelected ? `hsl(${routeColor} / 0.15)` : undefined,
+                  borderColor: isSelected ? `hsl(${routeColor})` : undefined,
+                }}
+                onClick={() => onSelectRoute(route, index)}
               >
                 <div className="flex flex-col w-full gap-2">
                   <div className="flex items-center justify-between">
@@ -51,6 +60,10 @@ export const RouteList = ({
                     <Badge
                       variant={isSelected ? "secondary" : "outline"}
                       className="ml-2"
+                      style={{
+                        backgroundColor: isSelected ? `hsl(${routeColor})` : undefined,
+                        borderColor: `hsl(${routeColor})`,
+                      }}
                     >
                       {route.distance} km
                     </Badge>
