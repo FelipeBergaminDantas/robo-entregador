@@ -220,7 +220,7 @@ const Index = () => {
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            Desenvolvido com D3.js • {routes.length} rotas possíveis • Algoritmo DFS • Velocidade média: 60 km/h • Tempo calculado com penalidade em curvas
+            Desenvolvido com D3.js • {routes.length} rotas possíveis • Algoritmo DFS • Velocidade: 60 km/h • +0.5 min por curva
           </p>
         </div>
       </div>
