@@ -20,7 +20,7 @@ export const graphData: GraphData = {
     { source: "C", target: "F", weight: 4 },
     { source: "D", target: "E", weight: 2 },
     { source: "E", target: "G", weight: 3 },
-    { source: "F", target: "G", weight: 4 },
+    { source: "F", target: "G", weight: 3 },
   ],
 };
 

@@ -46,7 +46,7 @@ const Index = () => {
 
   // Calculate all routes on mount
   useEffect(() => {
-    const pathfinder = new PathFinder(graphData.edges);
+    const pathfinder = new PathFinder(graphData.edges, graphData.nodes);
     const allRoutes = pathfinder.findAllPaths("A", "G");
     setRoutes(allRoutes);
     
@@ -178,24 +178,13 @@ const Index = () => {
                         {selectedRoute.path.join(" → ")}
                       </p>
                     </div>
-                    <div className="flex gap-6">
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground mb-1">
-                          Distância Total
-                        </p>
-                        <p className="text-2xl font-bold text-accent">
-                          {selectedRoute.distance} km
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground mb-1">
-                          Tempo Estimado
-                        </p>
-                        <p className="text-2xl font-bold"
-                           style={{ color: `hsl(${selectedRouteIndex !== null ? routeColors[selectedRouteIndex] : '142 76% 36%'})` }}>
-                          {selectedRoute.time} min
-                        </p>
-                      </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground mb-1">
+                        Distância Total
+                      </p>
+                      <p className="text-2xl font-bold text-accent">
+                        {selectedRoute.distance} km
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -231,7 +220,7 @@ const Index = () => {
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            Desenvolvido com D3.js • {routes.length} rotas possíveis • Algoritmo DFS • Velocidade média: 60 km/h
+            Desenvolvido com D3.js • {routes.length} rotas possíveis • Algoritmo DFS • Velocidade média: 60 km/h • Tempo calculado com penalidade em curvas
           </p>
         </div>
       </div>

@@ -2,6 +2,13 @@ import { Route } from "@/types/graph";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { Badge } from "./ui/badge";
+import { Clock } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 interface RouteListProps {
   routes: Route[];
@@ -57,17 +64,38 @@ export const RouteList = ({
                     <span className="font-semibold text-sm">
                       Rota {index + 1}
                     </span>
-                    <Badge
-                      variant={isSelected ? "secondary" : "outline"}
-                      className="ml-2"
-                      style={{
-                        backgroundColor: isSelected ? `hsl(${routeColor})` : undefined,
-                        borderColor: `hsl(${routeColor})`,
-                        color: isSelected ? 'hsl(var(--background))' : undefined,
-                      }}
-                    >
-                      {route.distance} km • {route.time} min
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={isSelected ? "secondary" : "outline"}
+                        style={{
+                          backgroundColor: isSelected ? `hsl(${routeColor})` : undefined,
+                          borderColor: `hsl(${routeColor})`,
+                          color: isSelected ? 'hsl(var(--background))' : undefined,
+                        }}
+                      >
+                        {route.distance} km
+                      </Badge>
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 p-0 hover:bg-transparent"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                            >
+                              <Clock className="h-4 w-4" style={{ color: `hsl(${routeColor})` }} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">
+                            <p className="font-semibold">{route.time} min</p>
+                            <p className="text-xs text-muted-foreground">Tempo estimado (com curvas)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   </div>
                   <div className="text-xs font-mono opacity-90">
                     {route.path.join(" → ")}
