@@ -17,6 +17,7 @@ interface AnimationControlsProps {
   onDurationChange: (value: number) => void;
   disabled: boolean;
   hideDurationControl?: boolean;
+  hideResetButton?: boolean;
 }
 
 export const AnimationControls = ({
@@ -28,6 +29,7 @@ export const AnimationControls = ({
   onDurationChange,
   disabled,
   hideDurationControl = false,
+  hideResetButton = false,
 }: AnimationControlsProps) => {
   return (
     <div className="flex items-center gap-3 p-4 bg-card/50 rounded-lg border border-border">
@@ -53,15 +55,17 @@ export const AnimationControls = ({
           </Button>
         )}
 
-        <Button
-          onClick={onReset}
-          disabled={disabled}
-          size="lg"
-          variant="outline"
-        >
-          <RotateCcw className="w-5 h-5 mr-2" />
-          Reiniciar
-        </Button>
+        {!hideResetButton && (
+          <Button
+            onClick={onReset}
+            disabled={disabled}
+            size="lg"
+            variant="outline"
+          >
+            <RotateCcw className="w-5 h-5 mr-2" />
+            Reiniciar
+          </Button>
+        )}
       </div>
 
       {!hideDurationControl && (

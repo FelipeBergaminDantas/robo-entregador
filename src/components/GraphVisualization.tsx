@@ -179,15 +179,17 @@ export const GraphVisualization = ({
 
       const fromNode = data.nodes.find(
         (n) => n.id === selectedRoute.path[currentSegment]
-      )!;
+      );
       const toNode = data.nodes.find(
         (n) => n.id === selectedRoute.path[currentSegment + 1]
-      )!;
+      );
 
-      const carX =
-        xScale(fromNode.x) + (xScale(toNode.x) - xScale(fromNode.x)) * segmentFraction;
-      const carY =
-        yScale(fromNode.y) + (yScale(toNode.y) - yScale(fromNode.y)) * segmentFraction;
+      // Only render car if both nodes are found
+      if (fromNode && toNode) {
+        const carX =
+          xScale(fromNode.x) + (xScale(toNode.x) - xScale(fromNode.x)) * segmentFraction;
+        const carY =
+          yScale(fromNode.y) + (yScale(toNode.y) - yScale(fromNode.y)) * segmentFraction;
 
       g.append("circle")
         .attr("cx", carX)
@@ -204,15 +206,16 @@ export const GraphVisualization = ({
         xScale(toNode.x) - xScale(fromNode.x)
       );
 
-      g.append("text")
-        .attr("x", carX)
-        .attr("y", carY)
-        .attr("text-anchor", "middle")
-        .attr("dominant-baseline", "middle")
-        .attr("font-size", "16px")
-        .attr("transform", `rotate(${(angle * 180) / Math.PI}, ${carX}, ${carY})`)
-        .text("🚗")
-        .style("pointer-events", "none");
+        g.append("text")
+          .attr("x", carX)
+          .attr("y", carY)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .attr("font-size", "16px")
+          .attr("transform", `rotate(${(angle * 180) / Math.PI}, ${carX}, ${carY})`)
+          .text("🚗")
+          .style("pointer-events", "none");
+      }
     }
   }, [data, selectedRoute, animationProgress, isAnimating, dimensions]);
 

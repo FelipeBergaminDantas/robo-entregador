@@ -74,7 +74,7 @@ const Index = () => {
     if (!isAnimating || !startTime || !selectedRoute) return;
 
     let animationFrameId: number;
-    const animationDuration = selectedRoute.time; // Use route time in minutes
+    const animationDuration = selectedRoute.time * 60; // Convert minutes to seconds
 
     const animate = (currentTime: number) => {
       const elapsed = (currentTime - startTime) / 1000 + pausedTime;
@@ -161,9 +161,10 @@ const Index = () => {
                 onPause={handlePause}
                 onReset={handleReset}
                 duration={selectedRoute?.time || 0}
-                onDurationChange={() => {}} // No longer needed
+                onDurationChange={() => {}}
                 disabled={!selectedRoute}
                 hideDurationControl={true}
+                hideResetButton={true}
               />
 
               {/* Current Route Info */}
