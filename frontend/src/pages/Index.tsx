@@ -1,40 +1,39 @@
 import { useState, useEffect, useCallback } from "react";
-import { graphData, ANIMATION_CONFIG } from "@/data/graphData";
-import { PathFinder } from "@/utils/pathfinder";
+import { graphData } from "@/data/graphData";
 import { Route } from "@/types/graph";
 import { GraphVisualization } from "@/components/GraphVisualization";
 import { RouteList } from "@/components/RouteList";
 import { AnimationControls } from "@/components/AnimationControls";
 import { Card } from "@/components/ui/card";
+import { fetchRotas } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
-// Generate heatmap colors based on time (green -> yellow -> red)
-const generateHeatmapColor = (time: number, minTime: number, maxTime: number): string => {
-  // Normalize time to 0-1 range
-  const normalized = (time - minTime) / (maxTime - minTime);
+// Generate heatmap colors based on distance (green -> yellow -> red)
+const generateHeatmapColor = (distance: number, minDist: number, maxDist: number): string => {
+  const normalized = (distance - minDist) / (maxDist - minDist);
   
-  // Green (120, 100%, 35%) -> Yellow (50, 100%, 50%) -> Red (0, 100%, 50%)
   let hue: number;
   let saturation: number;
   let lightness: number;
   
   if (normalized < 0.5) {
-    // Green to Yellow
     const t = normalized * 2;
-    hue = 120 - (70 * t); // 120 to 50
-    saturation = 76 + (24 * t); // 76% to 100%
-    lightness = 36 + (14 * t); // 36% to 50%
+    hue = 120 - (70 * t);
+    saturation = 76 + (24 * t);
+    lightness = 36 + (14 * t);
   } else {
-    // Yellow to Red
     const t = (normalized - 0.5) * 2;
-    hue = 50 - (50 * t); // 50 to 0
+    hue = 50 - (50 * t);
     saturation = 100;
-    lightness = 50 + (10 * t); // 50% to 60%
+    lightness = 50 + (10 * t);
   }
   
   return `${Math.round(hue)} ${Math.round(saturation)}% ${Math.round(lightness)}%`;
 };
 
 const Index = () => {
+  console.log("Index component mounted");
+  
   const [routes, setRoutes] = useState<Route[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(null);
@@ -43,38 +42,86 @@ const Index = () => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [pausedTime, setPausedTime] = useState(0);
   const [routeColors, setRouteColors] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Calculate all routes on mount
+  const { toast } = useToast();
+
+  // Fetch routes from API on mount
   useEffect(() => {
-    const pathfinder = new PathFinder(graphData.edges, graphData.nodes);
-    const allRoutes = pathfinder.findAllPaths("A", "G");
-    setRoutes(allRoutes);
-    
-    // Calculate heatmap colors based on time
-    if (allRoutes.length > 0) {
-      const times = allRoutes.map(r => r.time);
-      const minTime = Math.min(...times);
-      const maxTime = Math.max(...times);
-      
-      const colors = allRoutes.map(route => 
-        generateHeatmapColor(route.time, minTime, maxTime)
-      );
-      setRouteColors(colors);
-    }
-    
-    // Auto-select first route
-    if (allRoutes.length > 0) {
-      setSelectedRoute(allRoutes[0]);
-      setSelectedRouteIndex(0);
-    }
-  }, []);
+    console.log("useEffect triggered");
+    const loadRotas = async () => {
+      try {
+        console.log("Fetching routes...");
+        const rotasFromApi = await fetchRotas();
+        console.log("Routes received:", rotasFromApi);
+        console.log("First route:", rotasFromApi[0]);
+        
+        if (rotasFromApi.length === 0) {
+          console.log("No routes received");
+          toast({
+            title: "Erro ao carregar rotas",
+            description: "Backend não está respondendo",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
+        const formattedRoutes: Route[] = rotasFromApi.map((rota) => {
+          const nosPercorridos = Array.isArray(rota.nosPercorridos) ? [...rota.nosPercorridos] : [];
+          const arestasPercorridas = Array.isArray(rota.arestasPercorridas) ? [...rota.arestasPercorridas] : [];
+          
+          return {
+            id: rota.id,
+            nome: rota.nome,
+            path: nosPercorridos,
+            distance: rota.distanciaTotal || 0,
+            nosPercorridos: nosPercorridos,
+            distanciaTotal: rota.distanciaTotal || 0,
+            unidade: rota.unidade || "cm",
+            tempoEstimado: rota.tempoEstimado || 5000,
+            arestasPercorridas: arestasPercorridas,
+          };
+        });
+
+        // Ordenar rotas por distância (do mais rápido para o mais lento)
+        formattedRoutes.sort((a, b) => a.distanciaTotal - b.distanciaTotal);
+
+        console.log("Formatted routes:", formattedRoutes);
+        console.log("First formatted route:", formattedRoutes[0]);
+        
+        setRoutes(formattedRoutes);
+
+        if (formattedRoutes.length > 0) {
+          const distances = formattedRoutes.map((r) => r.distanciaTotal);
+          const minDist = Math.min(...distances);
+          const maxDist = Math.max(...distances);
+
+          const colors = formattedRoutes.map((route) =>
+            generateHeatmapColor(route.distanciaTotal, minDist, maxDist)
+          );
+          setRouteColors(colors);
+
+          setSelectedRoute(formattedRoutes[0]);
+          setSelectedRouteIndex(0);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Erro ao carregar rotas:", err);
+        setLoading(false);
+      }
+    };
+
+    loadRotas();
+  }, [toast]);
 
   // Animation loop
   useEffect(() => {
     if (!isAnimating || !startTime || !selectedRoute) return;
 
     let animationFrameId: number;
-    const animationDuration = selectedRoute.time * 60; // Convert minutes to seconds
+    const animationDuration = selectedRoute.tempoEstimado / 1000;
 
     const animate = (currentTime: number) => {
       const elapsed = (currentTime - startTime) / 1000 + pausedTime;
@@ -88,6 +135,12 @@ const Index = () => {
         setIsAnimating(false);
         setStartTime(null);
         setPausedTime(0);
+        
+        // Notificação de conclusão
+        toast({
+          title: "✅ Animação Concluída!",
+          description: `${selectedRoute.nome} percorrida com sucesso!`,
+        });
       }
     };
 
@@ -103,9 +156,15 @@ const Index = () => {
   const handlePlay = useCallback(() => {
     if (!selectedRoute) return;
     
+    // Notificação de início
+    toast({
+      title: "🚗 Animação Iniciada!",
+      description: `Percorrendo ${selectedRoute.nome}: ${selectedRoute.nosPercorridos?.join(" → ")}`,
+    });
+    
     setIsAnimating(true);
     setStartTime(performance.now());
-  }, [selectedRoute]);
+  }, [selectedRoute, toast]);
 
   const handlePause = useCallback(() => {
     setIsAnimating(false);
@@ -126,48 +185,51 @@ const Index = () => {
     handleReset();
   }, [handleReset]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <p className="text-2xl">Carregando rotas...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-[1800px] mx-auto space-y-6">
-        {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-foreground">
-            Visualizador Interativo de Trajetos em Grafos
+            Robô Entregador Autônomo com Rotas Otimizadas
           </h1>
           <p className="text-muted-foreground text-lg">
-            Explore e visualize diferentes rotas através do grafo de estradas
+            Sistema inteligente de otimização de rotas para entregas autônomas
           </p>
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Graph Visualization - Takes 2 columns on large screens */}
           <Card className="lg:col-span-2 p-6">
             <div className="space-y-4">
               <div className="h-[600px]">
-          <GraphVisualization
-            data={graphData}
-            selectedRoute={selectedRoute}
-            animationProgress={animationProgress}
-            isAnimating={isAnimating}
-            routeColor={selectedRouteIndex !== null ? routeColors[selectedRouteIndex] : undefined}
-          />
+                <GraphVisualization
+                  data={graphData}
+                  selectedRoute={selectedRoute}
+                  animationProgress={animationProgress}
+                  isAnimating={isAnimating}
+                  routeColor={selectedRouteIndex !== null ? routeColors[selectedRouteIndex] : undefined}
+                />
               </div>
 
-              {/* Animation Controls */}
               <AnimationControls
                 isAnimating={isAnimating}
                 onPlay={handlePlay}
                 onPause={handlePause}
                 onReset={handleReset}
-                duration={selectedRoute?.time || 0}
+                duration={(selectedRoute?.tempoEstimado || 0) / 1000}
                 onDurationChange={() => {}}
                 disabled={!selectedRoute}
                 hideDurationControl={true}
                 hideResetButton={true}
               />
 
-              {/* Current Route Info */}
               {selectedRoute && (
                 <div className="p-4 bg-muted/50 rounded-lg border border-border">
                   <div className="flex items-center justify-between">
@@ -176,7 +238,7 @@ const Index = () => {
                         Rota Selecionada
                       </p>
                       <p className="font-mono text-lg font-semibold">
-                        {selectedRoute.path.join(" → ")}
+                        {selectedRoute.nosPercorridos?.join(" → ") || selectedRoute.path?.join(" → ") || "N/A"}
                       </p>
                     </div>
                     <div className="text-right">
@@ -184,7 +246,7 @@ const Index = () => {
                         Distância Total
                       </p>
                       <p className="text-2xl font-bold text-accent">
-                        {selectedRoute.distance} km
+                        {selectedRoute.distanciaTotal || selectedRoute.distance || 0} {selectedRoute.unidade || "cm"}
                       </p>
                     </div>
                   </div>
@@ -193,35 +255,34 @@ const Index = () => {
             </div>
           </Card>
 
-          {/* Route List - Takes 1 column */}
           <Card className="p-6 h-[700px]">
             <RouteList
               routes={routes}
               selectedRoute={selectedRoute}
               onSelectRoute={handleSelectRoute}
               routeColors={routeColors}
+              onStartAnimation={handlePlay}
             />
           </Card>
         </div>
 
-        {/* Footer Info */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(120 76% 36%)' }}></div>
-              <span className="text-muted-foreground">Rápido</span>
+              <span className="text-muted-foreground">Curta</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(50 100% 50%)' }}></div>
-              <span className="text-muted-foreground">Médio</span>
+              <span className="text-muted-foreground">Média</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(0 100% 60%)' }}></div>
-              <span className="text-muted-foreground">Lento</span>
+              <span className="text-muted-foreground">Longa</span>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            Desenvolvido com D3.js • {routes.length} rotas possíveis • Algoritmo DFS • Velocidade: 60 km/h • +0.5 min por curva
+            Engenharia da Computação - UNIFECAF
           </p>
         </div>
       </div>

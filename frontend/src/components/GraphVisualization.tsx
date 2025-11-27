@@ -65,17 +65,37 @@ export const GraphVisualization = ({
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Determine active elements
-    const activeNodes = new Set(selectedRoute?.path || []);
+    let routePath: string[] = [];
+    if (selectedRoute) {
+      console.log("selectedRoute.nosPercorridos:", selectedRoute.nosPercorridos);
+      console.log("selectedRoute.path:", selectedRoute.path);
+      console.log("Is nosPercorridos array?", Array.isArray(selectedRoute.nosPercorridos));
+      console.log("nosPercorridos length:", selectedRoute.nosPercorridos?.length);
+      
+      if (Array.isArray(selectedRoute.nosPercorridos) && selectedRoute.nosPercorridos.length > 0) {
+        routePath = selectedRoute.nosPercorridos;
+      } else if (Array.isArray(selectedRoute.path) && selectedRoute.path.length > 0) {
+        routePath = selectedRoute.path;
+      }
+    }
+    
+    const activeNodes = new Set(routePath);
     const activeEdges = new Set<string>();
 
-    if (selectedRoute) {
-      for (let i = 0; i < selectedRoute.path.length - 1; i++) {
-        const edgeKey1 = `${selectedRoute.path[i]}-${selectedRoute.path[i + 1]}`;
-        const edgeKey2 = `${selectedRoute.path[i + 1]}-${selectedRoute.path[i]}`;
+    console.log("GraphVisualization - selectedRoute:", selectedRoute);
+    console.log("GraphVisualization - routePath:", routePath);
+    console.log("GraphVisualization - routeColor:", routeColor);
+
+    if (selectedRoute && routePath.length > 0) {
+      for (let i = 0; i < routePath.length - 1; i++) {
+        const edgeKey1 = `${routePath[i]}-${routePath[i + 1]}`;
+        const edgeKey2 = `${routePath[i + 1]}-${routePath[i]}`;
         activeEdges.add(edgeKey1);
         activeEdges.add(edgeKey2);
       }
     }
+    
+    console.log("GraphVisualization - activeEdges:", Array.from(activeEdges));
 
     // Draw edges
     const edges = g
@@ -131,7 +151,7 @@ export const GraphVisualization = ({
         return activeEdges.has(edgeKey) ? "bold" : "normal";
       })
       .style("pointer-events", "none")
-      .text((d) => `${d.weight}km`);
+      .text((d) => d.label || `${d.weight}cm`);
 
     // Draw nodes
     const nodes = g
@@ -168,8 +188,9 @@ export const GraphVisualization = ({
       .text((d) => d.id);
 
     // Draw animated "car" if animation is active
-    if (isAnimating && selectedRoute && selectedRoute.path.length > 1) {
-      const totalSegments = selectedRoute.path.length - 1;
+    const carPath = selectedRoute?.nosPercorridos || selectedRoute?.path || [];
+    if (isAnimating && selectedRoute && carPath.length > 1) {
+      const totalSegments = carPath.length - 1;
       const segmentProgress = animationProgress * totalSegments;
       const currentSegment = Math.min(
         Math.floor(segmentProgress),
@@ -178,10 +199,10 @@ export const GraphVisualization = ({
       const segmentFraction = segmentProgress - currentSegment;
 
       const fromNode = data.nodes.find(
-        (n) => n.id === selectedRoute.path[currentSegment]
+        (n) => n.id === carPath[currentSegment]
       );
       const toNode = data.nodes.find(
-        (n) => n.id === selectedRoute.path[currentSegment + 1]
+        (n) => n.id === carPath[currentSegment + 1]
       );
 
       // Only render car if both nodes are found

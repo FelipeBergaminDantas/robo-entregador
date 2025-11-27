@@ -8,12 +8,19 @@ export interface Edge {
   source: string;
   target: string;
   weight: number;
+  label?: string;
 }
 
 export interface Route {
+  id: number;
+  nome: string;
   path: string[];
   distance: number;
-  time: number; // tempo em minutos
+  distanciaTotal: number;
+  unidade: string;
+  tempoEstimado: number;
+  nosPercorridos: string[];
+  arestasPercorridas: string[];
 }
 
 export interface GraphData {
