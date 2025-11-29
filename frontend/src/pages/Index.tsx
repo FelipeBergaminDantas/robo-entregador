@@ -7,6 +7,7 @@ import { AnimationControls } from "@/components/AnimationControls";
 import { Card } from "@/components/ui/card";
 import { fetchRotas } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { executarRota1, executarRota2, executarRota3, executarRota4, executarRota5, executarRota6, executarRota7 } from "@/services/api";
 
 // Generate heatmap colors based on distance (green -> yellow -> red)
 const generateHeatmapColor = (distance: number, minDist: number, maxDist: number): string => {
@@ -154,17 +155,54 @@ const Index = () => {
   }, [isAnimating, startTime, pausedTime, selectedRoute]);
 
   const handlePlay = useCallback(() => {
-    if (!selectedRoute) return;
-    
-    // Notificação de início
-    toast({
-      title: "🚗 Animação Iniciada!",
-      description: `Percorrendo ${selectedRoute.nome}: ${selectedRoute.nosPercorridos?.join(" → ")}`,
+  if (!selectedRoute) return;
+  
+  console.log('🚗 Iniciando animação e enviando comando para ESP...');
+  
+  // Notificação de início
+  toast({
+    title: "🚗 Animação Iniciada!",
+    description: `Percorrendo ${selectedRoute.nome}: ${selectedRoute.nosPercorridos?.join(" → ")}`,
+  });
+  
+  // 1. Inicia a animação local
+  setIsAnimating(true);
+  setStartTime(performance.now());
+  
+  // 2. Envia comando para o ESP8266
+  const rotasMap: { [key: number]: () => Promise<any> } = {
+    1: executarRota1,
+    2: executarRota2,
+    3: executarRota3,
+    4: executarRota4,
+    5: executarRota5,
+    6: executarRota6,
+    7: executarRota7
+  };
+  
+  const funcaoRota = rotasMap[selectedRoute.id];
+  if (funcaoRota) {
+    console.log(`📡 Enviando comando ROTA_${selectedRoute.id} para ESP...`);
+    funcaoRota().then(result => {
+      if (result && result.sucesso) {
+        console.log('✅ Comando enviado com sucesso!');
+        toast({
+          title: "✅ Comando Enviado!",
+          description: `ESP8266 executando: ${result.comando}`,
+        });
+      } else {
+        console.error('❌ Erro ao enviar comando');
+        toast({
+          title: "⚠️ Aviso",
+          description: result?.mensagem || "Erro ao enviar comando para ESP8266",
+          variant: "default",
+        });
+      }
+    }).catch(error => {
+      console.error('❌ Erro de comunicação:', error);
     });
-    
-    setIsAnimating(true);
-    setStartTime(performance.now());
-  }, [selectedRoute, toast]);
+  }
+}, [selectedRoute, toast]);
 
   const handlePause = useCallback(() => {
     setIsAnimating(false);
