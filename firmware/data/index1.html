@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Robô Entregador Autônomo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            touch-action: manipulation;
+            color: #333;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .status-panel {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(116, 185, 255, 0.4);
+        }
+
+        .status-item {
+            display: inline-block;
+            margin: 0 20px;
+            font-weight: 600;
+        }
+
+        .status-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .rota-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #2c3e50;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .rotas-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .rota-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rota-card:hover {
+            transform: translateY(-2px);
+            border-color: #74b9ff;
+            box-shadow: 0 8px 25px rgba(116, 185, 255, 0.3);
+        }
+
+        .rota-card.active {
+            border-color: #00b894;
+            background: linear-gradient(135deg, #55efc4, #00b894);
+            color: white;
+        }
+
+        .rota-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .rota-nome {
+            font-size: 18px;
+            font-weight: bold;
+            color: inherit;
+        }
+
+        .rota-distancia {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .rota-card:not(.active) .rota-distancia {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
+        .rota-descricao {
+            font-size: 14px;
+            color: inherit;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .rota-card:not(.active) .rota-descricao {
+            color: #6c757d;
+        }
+
+        .controles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-executar {
+            background: linear-gradient(135deg, #00b894, #00a085);
+            color: white;
+        }
+
+        .btn-executar:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 184, 148, 0.4);
+        }
+
+        .btn-parar {
+            background: linear-gradient(135deg, #e17055, #d63031);
+            color: white;
+        }
+
+        .btn-parar:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
+        }
+
+        .log-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 25px;
+        }
+
+        .log-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .log-content {
+            height: 120px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 4px solid #74b9ff;
+        }
+
+        .log-time {
+            color: #7f8c8d;
+            font-size: 11px;
+            margin-right: 10px;
+        }
+
+        .log-success { 
+            background: #d4edda; 
+            color: #155724;
+            border-left-color: #28a745;
+        }
+        .log-error { 
+            background: #f8d7da; 
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+        .log-info { 
+            background: #d1ecf1; 
+            color: #0c5460;
+            border-left-color: #17a2b8;
+        }
+        .log-warning { 
+            background: #fff3cd; 
+            color: #856404;
+            border-left-color: #ffc107;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .status-item {
+                display: block;
+                margin: 10px 0;
+            }
+            
+            .controles {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn {
+                padding: 12px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Robô Entregador Autônomo</h1>
+            <p>Selecione uma rota para execução automática</p>
+        </div>
+
+        <div class="status-panel">
+            <div class="status-item">
+                <span>Status: </span>
+                <span class="status-value" id="status-robo">Pronto</span>
+            </div>
+            <div class="status-item">
+                <span>Conexão: </span>
+                <span class="status-value" id="status-conexao">Access Point</span>
+            </div>
+        </div>
+
+        <div class="rota-section">
+            <div class="section-title">🗺️ Rotas Disponíveis</div>
+            
+            <div class="rotas-grid" id="rotas-container">
+                <!-- Rotas serão inseridas via JavaScript -->
+            </div>
+
+            <div class="controles">
+                <button class="btn btn-executar" id="btn-executar" onclick="executarRota()" disabled>
+                    <span id="executar-text">▶️ Executar Rota</span>
+                    <span id="executar-loading" class="loading" style="display: none;"></span>
+                </button>
+                <button class="btn btn-parar" id="btn-parar" onclick="pararExecucao()" disabled>
+                    ⏹️ Parar Execução
+                </button>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <div class="log-title">📋 Log de Execução</div>
+            <div id="event-log" class="log-content">
+                <div class="log-entry log-info">
+                    <span class="log-time" id="current-time"></span>
+                    Sistema inicializado - Selecione uma rota
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rotaSelecionada = null;
+        let executando = false;
+
+        // Definição das rotas
+        const rotas = [
+            {
+                id: "ROTA_1",
+                nome: "Rota 1 - A → B → E → G",
+                distancia: "157.5cm",
+                descricao: "Trajeto mais rápido até o destino G",
+                tempo: "15.8s"
+            },
+            {
+                id: "ROTA_2", 
+                nome: "Rota 2 - A → B → D → E → G",
+                distancia: "198cm",
+                descricao: "Trajeto alternativo passando por D",
+                tempo: "19.8s"
+            },
+            {
+                id: "ROTA_3",
+                nome: "Rota 3 - A → C → F → G", 
+                distancia: "181cm",
+                descricao: "Trajeto pela direita do grafo",
+                tempo: "18.1s"
+            },
+            {
+                id: "ROTA_4",
+                nome: "Rota 4 - A → C → D → E → G",
+                distancia: "216cm", 
+                descricao: "Trajeto completo pela direita",
+                tempo: "21.6s"
+            },
+            {
+                id: "ROTA_5",
+                nome: "Rota 5 - A → B → D → C → F → G",
+                distancia: "287cm",
+                descricao: "Trajeto extenso com cobertura total",
+                tempo: "28.7s"
+            },
+            {
+                id: "ROTA_6", 
+                nome: "Rota 6 - A → C → D → B → E → G",
+                distancia: "295.5cm",
+                descricao: "Trajeto circular pelo grafo",
+                tempo: "29.6s"
+            },
+            {
+                id: "ROTA_7",
+                nome: "Rota 7 - A → B → E → D → C → F → G",
+                distancia: "336.5cm",
+                descricao: "Trajeto mais completo - Todas as arestas",
+                tempo: "33.7s"
+            }
+        ];
+
+        // Função para atualizar o timestamp
+        function atualizarTimestamp() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = 
+                now.toLocaleTimeString('pt-BR', { hour12: false });
+        }
+
+        // Função para adicionar log
+        function addLog(mensagem, tipo = 'info') {
+            const timestamp = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${tipo}`;
+            logEntry.innerHTML = `<span class="log-time">[${timestamp}]</span> ${mensagem}`;
+            document.getElementById('event-log').prepend(logEntry);
+            
+            // Mantém apenas os últimos 10 logs
+            const logContent = document.getElementById('event-log');
+            while (logContent.children.length > 10) {
+                logContent.removeChild(logContent.lastChild);
+            }
+        }
+
+        // Função para criar os cards das rotas
+        function criarCardsRotas() {
+            const container = document.getElementById('rotas-container');
+            
+            rotas.forEach(rota => {
+                const card = document.createElement('div');
+                card.className = 'rota-card';
+                card.setAttribute('data-rota', rota.id);
+                
+                card.innerHTML = `
+                    <div class="rota-header">
+                        <div class="rota-nome">${rota.nome}</div>
+                        <div class="rota-distancia">${rota.distancia} • ${rota.tempo}</div>
+                    </div>
+                    <div class="rota-descricao">${rota.descricao}</div>
+                `;
+                
+                card.addEventListener('click', () => selecionarRota(rota.id));
+                container.appendChild(card);
+            });
+        }
+
+        // Função para selecionar uma rota
+        function selecionarRota(rotaId) {
+            if (executando) {
+                addLog('Aguarde a execução atual terminar', 'warning');
+                return;
+            }
+            
+            // Remove seleção anterior
+            document.querySelectorAll('.rota-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            // Adiciona seleção nova
+            const cardSelecionado = document.querySelector(`[data-rota="${rotaId}"]`);
+            cardSelecionado.classList.add('active');
+            
+            rotaSelecionada = rotaId;
+            document.getElementById('btn-executar').disabled = false;
+            
+            const rota = rotas.find(r => r.id === rotaId);
+            addLog(`Rota selecionada: ${rota.nome}`, 'info');
+        }
+
+        // Função para executar a rota selecionada
+        async function executarRota() {
+            if (!rotaSelecionada || executando) {
+                return;
+            }
+            
+            const btnExecutar = document.getElementById('btn-executar');
+            const btnParar = document.getElementById('btn-parar');
+            const executarText = document.getElementById('executar-text');
+            const executarLoading = document.getElementById('executar-loading');
+            
+            // Atualiza UI
+            executando = true;
+            btnExecutar.disabled = true;
+            executarText.style.display = 'none';
+            executarLoading.style.display = 'inline-block';
+            btnParar.disabled = false;
+            
+            document.getElementById('status-robo').textContent = 'Executando';
+            document.getElementById('status-robo').style.color = '#fff';
+            
+            const rota = rotas.find(r => r.id === rotaSelecionada);
+            addLog(`Iniciando execução: ${rota.nome}`, 'info');
+            
+            try {
+                const response = await fetch('/executar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ comando: rotaSelecionada })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addLog(`✅ Rota ${rotaSelecionada} iniciada com sucesso`, 'success');
+                    
+                    // Monitora o status da execução
+                    monitorarExecucao();
+                    
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro ao executar rota: ${error.message}`, 'error');
+                finalizarExecucao();
+            }
+        }
+
+        // Função para monitorar a execução
+        async function monitorarExecucao() {
+            const checkStatus = async () => {
+                if (!executando) return;
+                
+                try {
+                    const response = await fetch('/status');
+                    const status = await response.json();
+                    
+                    if (!status.executando && executando) {
+                        // Execução terminou
+                        addLog('✅ Execução da rota concluída', 'success');
+                        finalizarExecucao();
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar status:', error);
+                }
+                
+                if (executando) {
+                    setTimeout(checkStatus, 1000);
+                }
+            };
+            
+            checkStatus();
+        }
+
+        // Função para parar a execução
+        async function pararExecucao() {
+            if (!executando) return;
+            
+            addLog('⏹️ Parando execução...', 'warning');
+            
+            try {
+                const response = await fetch('/executar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ comando: 'STOP' })
+                });
+                
+                const result = await response.json();
+                addLog('🛑 Execução interrompida', 'info');
+                
+            } catch (error) {
+                addLog(`❌ Erro ao parar execução: ${error.message}`, 'error');
+            }
+            
+            finalizarExecucao();
+        }
+
+        // Função para finalizar a execução (limpeza da UI)
+        function finalizarExecucao() {
+            executando = false;
+            rotaSelecionada = null;
+            
+            const btnExecutar = document.getElementById('btn-executar');
+            const btnParar = document.getElementById('btn-parar');
+            const executarText = document.getElementById('executar-text');
+            const executarLoading = document.getElementById('executar-loading');
+            
+            // Restaura UI
+            btnExecutar.disabled = true;
+            executarText.style.display = 'inline-block';
+            executarLoading.style.display = 'none';
+            btnParar.disabled = true;
+            
+            document.getElementById('status-robo').textContent = 'Pronto';
+            document.getElementById('status-robo').style.color = '#fff';
+            
+            // Remove seleção das rotas
+            document.querySelectorAll('.rota-card').forEach(card => {
+                card.classList.remove('active');
+            });
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            criarCardsRotas();
+            atualizarTimestamp();
+            setInterval(atualizarTimestamp, 1000);
+            addLog('Sistema pronto - Conectado via Access Point', 'info');
+            
+            // Verifica status inicial
+            fetch('/status')
+                .then(response => response.json())
+                .then(status => {
+                    if (status.executando) {
+                        document.getElementById('status-robo').textContent = 'Executando';
+                        addLog('⚠️ Robô já está em execução', 'warning');
+                    }
+                })
+                .catch(error => {
+                    addLog('❌ Erro ao conectar com o robô', 'error');
+                });
+        });
+
+        // Prevenir comportamento padrão de toque
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>

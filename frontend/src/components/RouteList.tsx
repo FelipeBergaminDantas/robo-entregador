@@ -2,14 +2,14 @@ import { Route } from "@/types/graph";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { Badge } from "./ui/badge";
-import { Clock, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import { executarRota } from "@/services/api";
+import { executarRota1, executarRota2, executarRota3, executarRota4, executarRota5, executarRota6, executarRota7 } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface RouteListProps {
@@ -45,21 +45,40 @@ export const RouteList = ({
       onStartAnimation();
     }
     
-    // Envia comando para o backend (não espera resposta para iniciar animação)
-    executarRota(route.id).then(result => {
-      if (result && result.sucesso) {
-        toast({
-          title: "✅ Comando Enviado!",
-          description: `${result.nomeRota} - Comando: ${result.comando}`,
-        });
-      } else {
-        toast({
-          title: "⚠️ Aviso",
-          description: result?.mensagem || "ESP8266 não conectada - Animação executada localmente",
-          variant: "default",
-        });
-      }
-    });
+    // Mapeia o ID da rota para a função correta
+    const rotasMap: { [key: number]: () => Promise<any> } = {
+      1: executarRota1,
+      2: executarRota2,
+      3: executarRota3,
+      4: executarRota4,
+      5: executarRota5,
+      6: executarRota6,
+      7: executarRota7
+    };
+    
+    const funcaoRota = rotasMap[route.id];
+    if (funcaoRota) {
+      funcaoRota().then(result => {
+        if (result && result.sucesso) {
+          toast({
+            title: "✅ Comando Enviado!",
+            description: `${result.comando} - ${result.caminho}`,
+          });
+        } else {
+          toast({
+            title: "⚠️ Aviso",
+            description: result?.mensagem || "Erro ao enviar comando para ESP8266",
+            variant: "default",
+          });
+        }
+      });
+    } else {
+      toast({
+        title: "❌ Erro",
+        description: `Rota ${route.id} não encontrada`,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -113,33 +132,6 @@ export const RouteList = ({
                       >
                         {route.distanciaTotal} {route.unidade}
                       </Badge>
-                      <TooltipProvider delayDuration={100}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 p-0 hover:bg-transparent"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                              }}
-                            >
-                              <Clock
-                                className="h-4 w-4"
-                                style={{ color: `hsl(${routeColor})` }}
-                              />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="left">
-                            <p className="font-semibold">
-                              {(route.tempoEstimado / 1000).toFixed(1)}s
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Tempo estimado
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
                       <TooltipProvider delayDuration={100}>
                         <Tooltip>
                           <TooltipTrigger asChild>
